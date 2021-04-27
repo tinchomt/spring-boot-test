@@ -1,5 +1,6 @@
 package com.mt.test.springboot.app;
 
+import static com.mt.test.springboot.app.Datos.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -19,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 
 @SpringBootTest
 class SpringbootTestApplicationTests {
@@ -42,8 +45,8 @@ class SpringbootTestApplicationTests {
 
 	@Test
 	void contextLoads() {
-		when(cuentaRepository.findById(1L)).thenReturn(Datos.crearCuenta001());
-		when(cuentaRepository.findById(2L)).thenReturn(Datos.crearCuenta002());
+		when(cuentaRepository.findById(1L)).thenReturn(crearCuenta001());
+		when(cuentaRepository.findById(2L)).thenReturn(crearCuenta002());
 		when(bancoRepository.findById(1L)).thenReturn(Datos.crearBanco());
 
 		BigDecimal saldoOrigen = service.revisarSaldo(1L);
@@ -63,10 +66,10 @@ class SpringbootTestApplicationTests {
 
 		 verify(cuentaRepository,times(3)).findById(1L);
 		 verify(cuentaRepository,times(3)).findById(2L);
-		 verify(cuentaRepository, times(2)).update(any(Cuenta.class));
+		 verify(cuentaRepository, times(2)).save(any(Cuenta.class));
 
 		 verify(bancoRepository,times(2)).findById(1L);
-		 verify(bancoRepository).update(any(Banco.class));
+		 verify(bancoRepository).save(any(Banco.class));
 
 		verify(cuentaRepository,times(6)).findById(anyLong());
 		 verify(cuentaRepository,never()).findAll();
@@ -75,8 +78,8 @@ class SpringbootTestApplicationTests {
 
 	@Test
 	void contextLoads2() {
-		when(cuentaRepository.findById(1L)).thenReturn(Datos.crearCuenta001());
-		when(cuentaRepository.findById(2L)).thenReturn(Datos.crearCuenta002());
+		when(cuentaRepository.findById(1L)).thenReturn(crearCuenta001());
+		when(cuentaRepository.findById(2L)).thenReturn(crearCuenta002());
 		when(bancoRepository.findById(1L)).thenReturn(Datos.crearBanco());
 
 		BigDecimal saldoOrigen = service.revisarSaldo(1L);
@@ -100,10 +103,10 @@ class SpringbootTestApplicationTests {
 
 		verify(cuentaRepository,times(3)).findById(1L);
 		verify(cuentaRepository,times(2)).findById(2L);
-		verify(cuentaRepository, never()).update(any(Cuenta.class));
+		verify(cuentaRepository, never()).save(any(Cuenta.class));
 
 		verify(bancoRepository,times(1)).findById(1L);
-		verify(bancoRepository, never()).update(any(Banco.class));
+		verify(bancoRepository, never()).save(any(Banco.class));
 		verify(cuentaRepository,never()).findAll();
 		verify(cuentaRepository,times(5)).findById(anyLong());
 	}
@@ -111,7 +114,7 @@ class SpringbootTestApplicationTests {
 	@Test
 	void contextLoads3() {
 
-		when(cuentaRepository.findById(1L)).thenReturn(Datos.crearCuenta001());
+		when(cuentaRepository.findById(1L)).thenReturn(crearCuenta001());
 
 		Cuenta cuenta1 = service.findById(1L);
 		Cuenta cuenta2 = service.findById(1L);
@@ -124,5 +127,42 @@ class SpringbootTestApplicationTests {
 		verify(cuentaRepository,times(2)).findById(1L);
 
 
+	}
+
+	@Test
+	void testFindAll() {
+		// Given
+		List<Cuenta> datos = Arrays.asList(crearCuenta001().get(), crearCuenta002().get());
+		when(cuentaRepository.findAll()).thenReturn(datos);
+
+		// when
+		List<Cuenta> cuentas = service.findAll();
+
+		// then
+		assertFalse(cuentas.isEmpty());
+		assertEquals(2, cuentas.size());
+		assertTrue(cuentas.contains(crearCuenta002().get()));
+
+		verify(cuentaRepository).findAll();
+	}
+
+	@Test
+	void testSave() {
+		// given
+		Cuenta cuentaPepe = new Cuenta(null, "Pepe", new BigDecimal("3000"));
+		when(cuentaRepository.save(any())).then(invocation ->{
+			Cuenta c = invocation.getArgument(0);
+			c.setId(3L);
+			return c;
+		});
+
+		// when
+		Cuenta cuenta = service.save(cuentaPepe);
+		// then
+		assertEquals("Pepe", cuenta.getPersona());
+		assertEquals(3, cuenta.getId());
+		assertEquals("3000", cuenta.getSaldo().toPlainString());
+
+		verify(cuentaRepository).save(any());
 	}
 }
